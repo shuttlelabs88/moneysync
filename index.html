@@ -276,12 +276,8 @@ input{font-family:inherit}
 <div id="toast"><span class="d"></span><span id="toastMsg"></span></div>
 <div class="loading" id="loading"><div class="spin"></div></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ═══════ MoneySync ═══════ */
-const SB_URL='https://gaqqksnqrushbuvigxvj.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhcXFrc25xcnVzaGJ1dmlneHZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MTcyODYsImV4cCI6MjA5NTI5MzI4Nn0.VRYyjhg10Gvs-9OeWQxxKrUt3o54hXdqLLS1c2OKfBI';
-const sb=supabase.createClient(SB_URL,SB_KEY);
 const GBP=new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'});
 const money=n=>GBP.format(n||0);
 const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -291,10 +287,21 @@ const INC_CATS=[['Payday','💷'],['Bonus','✨'],['Other','➕']];
 const CAT_ICON=Object.fromEntries([...EXP_CATS,...INC_CATS]);
 
 let ME=localStorage.getItem('ms-who')||null;
-let ROWS=[], WISH=[];
+let ROWS=[
+  {id:'1',type:'income',amount:2800,category:'Payday',label:'Payday',person:'User 1',occurred_on:'2026-06-01'},
+  {id:'2',type:'expense',amount:320,category:'Bills',label:'Rent top-up',person:'User 1',occurred_on:'2026-06-02'},
+  {id:'3',type:'expense',amount:85.50,category:'Shop',label:'Tesco shop',person:'User 1',occurred_on:'2026-06-03'},
+  {id:'4',type:'expense',amount:45,category:'Transport',label:'Monthly bus pass',person:'User 1',occurred_on:'2026-06-03'},
+  {id:'5',type:'expense',amount:32,category:'Eating out',label:'Pizza night',person:'User 1',occurred_on:'2026-06-04'},
+];
+let WISH=[
+  {id:'w1',name:'PS5 Controller',cost:69.99,link:'https://www.amazon.co.uk',requested_by:'User 2',status:'saving'},
+  {id:'w2',name:'New Trainers',cost:120,link:null,requested_by:'User 2',status:'saving'},
+];
 let viewMonth=new Date(); viewMonth.setDate(1);
 let addType='expense', addCat='Bills';
 let notified=new Set(), booted=false;
+let nextId=100;
 
 /* ---- profiles ---- */
 document.querySelectorAll('.profile').forEach(b=>b.addEventListener('click',()=>{
@@ -322,14 +329,9 @@ document.getElementById('prevM').onclick=()=>{viewMonth.setMonth(viewMonth.getMo
 document.getElementById('nextM').onclick=()=>{viewMonth.setMonth(viewMonth.getMonth()+1);render();};
 
 /* ---- load ---- */
-async function loadAll(){
-  const [tx,wl]=await Promise.all([
-    sb.from('transactions').select('*').order('occurred_on',{ascending:false}).order('created_at',{ascending:false}),
-    sb.from('wishlist').select('*').eq('status','saving').order('created_at',{ascending:false})
-  ]);
+function loadAll(){
   document.getElementById('loading').classList.add('hide');
-  if(tx.error||wl.error){ setLive(false); console.error(tx.error||wl.error); return; }
-  setLive(true); ROWS=tx.data||[]; WISH=wl.data||[]; render(); booted=true;
+  setLive(true); render(); booted=true;
 }
 const sumMonth=(d,type)=>{const k=monthKey(d);return ROWS.filter(r=>r.type===type&&(r.occurred_on||'').slice(0,7)===k).reduce((s,r)=>s+ +r.amount,0);};
 const liveLeft=()=>sumMonth(new Date(),'income')-sumMonth(new Date(),'expense');
@@ -436,25 +438,22 @@ function renderWishMum(){
   list.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>buyWish(b.dataset.buy));
 }
 
-/* ---- mutations ---- */
-async function delTx(id){
+/* ---- mutations (local) ---- */
+function delTx(id){
   const r=ROWS.find(x=>x.id===id);
   if(!confirm(`Delete “${r?.label||r?.category}” (${money(r?.amount)})?`)) return;
   ROWS=ROWS.filter(x=>x.id!==id); render();
-  if((await sb.from('transactions').delete().eq('id',id)).error){ toast('Could not delete'); loadAll(); }
 }
-async function delWish(id){
+function delWish(id){
   const w=WISH.find(x=>x.id===id);
   if(!confirm(`Remove “${w?.name}” from the wishlist?`)) return;
   WISH=WISH.filter(x=>x.id!==id); render();
-  if((await sb.from('wishlist').delete().eq('id',id)).error){ toast('Could not remove'); loadAll(); }
 }
-async function buyWish(id){
+function buyWish(id){
   const w=WISH.find(x=>x.id===id); if(!w) return;
   if(!confirm(`Mark “${w.name}” as bought? This logs a ${money(w.cost)} expense.`)) return;
-  await sb.from('transactions').insert({type:'expense',amount:w.cost,category:'Shop',label:w.name,person:'User 1',occurred_on:new Date().toISOString().slice(0,10)});
-  await sb.from('wishlist').update({status:'bought'}).eq('id',id);
-  WISH=WISH.filter(x=>x.id!==id); toast(`Got ${w.name} — logged ${money(w.cost)} 🛍️`);
+  ROWS.unshift({id:String(++nextId),type:'expense',amount:w.cost,category:'Shop',label:w.name,person:'User 1',occurred_on:new Date().toISOString().slice(0,10)});
+  WISH=WISH.filter(x=>x.id!==id); toast(`Got ${w.name} — logged ${money(w.cost)} 🛍️`); render();
 }
 
 /* ---- money sheet (Mum) ---- */
@@ -483,13 +482,11 @@ document.getElementById('segExp').onclick=()=>openSheet('expense');
 document.getElementById('segInc').onclick=()=>openSheet('income');
 document.getElementById('amtIn').addEventListener('input',e=>{e.target.value=e.target.value.replace(/[^0-9.]/g,'').replace(/(\..*)\./g,'$1');refreshSave();});
 function refreshSave(){document.getElementById('saveBtn').disabled=!(parseFloat(document.getElementById('amtIn').value)>0);}
-document.getElementById('saveBtn').onclick=async()=>{
+document.getElementById('saveBtn').onclick=()=>{
   const amount=parseFloat(document.getElementById('amtIn').value); if(!(amount>0))return;
-  const row={type:addType,amount,category:addCat,label:document.getElementById('labelIn').value.trim()||addCat,person:ME,occurred_on:document.getElementById('dateIn').value||new Date().toISOString().slice(0,10)};
+  const row={id:String(++nextId),type:addType,amount,category:addCat,label:document.getElementById('labelIn').value.trim()||addCat,person:ME,occurred_on:document.getElementById('dateIn').value||new Date().toISOString().slice(0,10)};
   sheet.classList.remove('open');
-  const {data,error}=await sb.from('transactions').insert(row).select().single();
-  if(error){toast('Save failed');return;}
-  if(data&&!ROWS.find(r=>r.id===data.id)){ROWS.unshift(data);render();}
+  ROWS.unshift(row); render();
   toast((addType==='income'?'Income':'Expense')+' added · '+money(amount));
 };
 
@@ -502,15 +499,13 @@ document.getElementById('addWish').onclick=()=>{
 document.getElementById('wCost').addEventListener('input',e=>{e.target.value=e.target.value.replace(/[^0-9.]/g,'').replace(/(\..*)\./g,'$1');wRefresh();});
 document.getElementById('wName').addEventListener('input',wRefresh);
 function wRefresh(){document.getElementById('wSave').disabled=!(parseFloat(document.getElementById('wCost').value)>0 && document.getElementById('wName').value.trim());}
-document.getElementById('wSave').onclick=async()=>{
+document.getElementById('wSave').onclick=()=>{
   const cost=parseFloat(document.getElementById('wCost').value); const name=document.getElementById('wName').value.trim();
   if(!(cost>0)||!name)return;
   let link=document.getElementById('wLink').value.trim(); if(link&&!/^https?:\/\//i.test(link))link='https://'+link;
-  const row={name,cost,link:link||null,requested_by:'User 2',status:'saving'};
+  const row={id:String(++nextId),name,cost,link:link||null,requested_by:'User 2',status:'saving'};
   wsheet.classList.remove('open');
-  const {data,error}=await sb.from('wishlist').insert(row).select().single();
-  if(error){toast('Save failed');return;}
-  if(data&&!WISH.find(w=>w.id===data.id)){WISH.unshift(data);render();}
+  WISH.unshift(row); render();
   const a=affordability(cost);
   toast(a.ready?`Added — you can afford it now! 🎉`:`Added “${name}” to your wishlist`);
 };
@@ -518,23 +513,6 @@ document.getElementById('wSave').onclick=async()=>{
 /* close sheets */
 document.querySelectorAll('[data-close]').forEach(s=>s.onclick=()=>s.closest('.sheetwrap').classList.remove('open'));
 
-/* ---- realtime ---- */
-sb.channel('ms-live')
-  .on('postgres_changes',{event:'*',schema:'public',table:'transactions'},p=>{
-    const n=p.new,o=p.old;
-    if(p.eventType==='INSERT'){ if(!ROWS.find(r=>r.id===n.id)){ROWS.unshift(n); if(n.person!==ME&&ME) toast(`${n.person} added ${n.type==='income'?'income':'an expense'} · ${money(n.amount)}`);} }
-    else if(p.eventType==='DELETE'){ROWS=ROWS.filter(r=>r.id!==o.id);}
-    else if(p.eventType==='UPDATE'){ROWS=ROWS.map(r=>r.id===n.id?n:r);}
-    render();
-  })
-  .on('postgres_changes',{event:'*',schema:'public',table:'wishlist'},p=>{
-    const n=p.new,o=p.old;
-    if(p.eventType==='INSERT'){ if(n.status==='saving'&&!WISH.find(w=>w.id===n.id)) WISH.unshift(n); }
-    else if(p.eventType==='DELETE'){ WISH=WISH.filter(w=>w.id!==o.id); }
-    else if(p.eventType==='UPDATE'){ WISH=WISH.filter(w=>w.id!==n.id); if(n.status==='saving') WISH.unshift(n); }
-    render();
-  })
-  .subscribe(s=>{ if(s==='SUBSCRIBED') setLive(true); });
 
 function setLive(on){document.getElementById('liveDot').classList.toggle('off',!on);document.getElementById('liveTxt').textContent=on?'Live · synced':'Offline';}
 let tT; function toast(msg){document.getElementById('toastMsg').textContent=msg;const t=document.getElementById('toast');t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),3400);}
