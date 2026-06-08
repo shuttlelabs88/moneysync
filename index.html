@@ -282,7 +282,7 @@ const GBP=new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'});
 const money=n=>GBP.format(n||0);
 const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-const EXP_CATS=[['Bills','🧾'],['Shop','🛒'],['Transport','🚗'],['Eating out','🍽️'],['Health','💊'],['Kids','🧸'],['Fun','🎉'],['Other','📦']];
+const EXP_CATS=[['Bills','🧾'],['Subscriptions','📱'],['Shopping','🛍️'],['Transport','🚗'],['Eating out','🍽️'],['Health','💊'],['Weed','🌿'],['Fun','🎉'],['Other','📦']];
 const INC_CATS=[['Payday','💷'],['Bonus','✨'],['Other','➕']];
 const CAT_ICON=Object.fromEntries([...EXP_CATS,...INC_CATS]);
 
@@ -290,7 +290,7 @@ let ME=localStorage.getItem('ms-who')||null;
 let ROWS=[
   {id:'1',type:'income',amount:2800,category:'Payday',label:'Payday',person:'User 1',occurred_on:'2026-06-01'},
   {id:'2',type:'expense',amount:320,category:'Bills',label:'Rent top-up',person:'User 1',occurred_on:'2026-06-02'},
-  {id:'3',type:'expense',amount:85.50,category:'Shop',label:'Tesco shop',person:'User 1',occurred_on:'2026-06-03'},
+  {id:'3',type:'expense',amount:85.50,category:'Shopping',label:'Tesco shop',person:'User 1',occurred_on:'2026-06-03'},
   {id:'4',type:'expense',amount:45,category:'Transport',label:'Monthly bus pass',person:'User 1',occurred_on:'2026-06-03'},
   {id:'5',type:'expense',amount:32,category:'Eating out',label:'Pizza night',person:'User 1',occurred_on:'2026-06-04'},
 ];
@@ -452,7 +452,7 @@ function delWish(id){
 function buyWish(id){
   const w=WISH.find(x=>x.id===id); if(!w) return;
   if(!confirm(`Mark “${w.name}” as bought? This logs a ${money(w.cost)} expense.`)) return;
-  ROWS.unshift({id:String(++nextId),type:'expense',amount:w.cost,category:'Shop',label:w.name,person:'User 1',occurred_on:new Date().toISOString().slice(0,10)});
+  ROWS.unshift({id:String(++nextId),type:'expense',amount:w.cost,category:'Shopping',label:w.name,person:'User 1',occurred_on:new Date().toISOString().slice(0,10)});
   WISH=WISH.filter(x=>x.id!==id); toast(`Got ${w.name} — logged ${money(w.cost)} 🛍️`); render();
 }
 
