@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<title>MoneySync — User 1 &amp; User 2</title>
+<title>MoneySync — Mum &amp; Thomas</title>
 <meta name="theme-color" content="#0E1116">
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -186,8 +186,8 @@ input{font-family:inherit}
   <h1>Who's budgeting?</h1>
   <div class="sub">MoneySync · live shared budget</div>
   <div class="profiles">
-    <button class="profile" data-who="User 1"><div class="av mum"></div><div class="name">User 1</div><div class="role">manages the money</div></button>
-    <button class="profile" data-who="User 2"><div class="av tom"></div><div class="name">User 2</div><div class="role">what's left + wishlist</div></button>
+    <button class="profile" data-who="Mum"><div class="av mum"></div><div class="name">Mum</div><div class="role">manages the money</div></button>
+    <button class="profile" data-who="Thomas"><div class="av tom"></div><div class="name">Thomas</div><div class="role">what's left + wishlist</div></button>
   </div>
 </div>
 
@@ -196,7 +196,7 @@ input{font-family:inherit}
   <div class="top">
     <div class="me-av" id="meAv">🧑</div>
     <div class="hi">
-      <b id="meHi">Hey User 2</b>
+      <b id="meHi">Hey Thomas</b>
       <span><span class="live-dot" id="liveDot"></span> <span id="liveTxt">Live · synced</span></span>
     </div>
     <button class="icon-btn" id="switchBtn" title="Switch profile">⇄</button>
@@ -232,7 +232,7 @@ input{font-family:inherit}
 
   <!-- MUM: Thomas's wishlist to action -->
   <div class="mum-only">
-    <div class="section-head"><span>🎁 User 2's wishlist</span></div>
+    <div class="section-head"><span>🎁 Thomas's wishlist</span></div>
     <div id="wishMum"></div>
   </div>
 
@@ -268,7 +268,7 @@ input{font-family:inherit}
     <div class="grab"></div>
     <div class="amt-in"><span>£</span><input id="wCost" type="text" inputmode="decimal" placeholder="0" maxlength="9"></div>
     <div class="field"><label>What is it?</label><input id="wName" type="text" placeholder="e.g. PS5 controller"></div>
-    <div class="field"><label>Link (optional)</label><input id="wLink" type="text" inputmode="url" placeholder="Paste a link for User 1"></div>
+    <div class="field"><label>Link (optional)</label><input id="wLink" type="text" inputmode="url" placeholder="Paste a link for Mum"></div>
     <button class="save wish" id="wSave" disabled>Add to wishlist</button>
   </div>
 </div>
@@ -303,7 +303,7 @@ document.querySelectorAll('.profile').forEach(b=>b.addEventListener('click',()=>
 document.getElementById('switchBtn').onclick=()=>{ localStorage.removeItem('ms-who'); location.reload(); };
 
 function enterApp(){
-  const mum=ME==='User 1';
+  const mum=ME==='Mum';
   document.getElementById('picker').classList.add('hide');
   document.getElementById('app').classList.add('show');
   const av=document.getElementById('meAv'); av.textContent=''; av.className='me-av '+(mum?'mum':'tom');
@@ -362,7 +362,7 @@ const fmtDate=d=>d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:
 
 /* ---- render ---- */
 function render(){
-  const mum=ME==='User 1';
+  const mum=ME==='Mum';
   // hero (Mum: viewMonth, Thomas: this month)
   const d=mum?viewMonth:new Date();
   document.getElementById('monthLbl').textContent=isThisMonth(viewMonth)?'This month':viewMonth.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
@@ -400,7 +400,7 @@ function renderWishTom(){
   if(!WISH.length){ list.innerHTML='<div class="empty"><div class="e">🎯</div><b>No wishlist yet</b><span>Add something you want — I’ll work out when you can afford it.</span></div>'; return; }
   list.innerHTML=WISH.map(w=>{
     const a=affordability(+w.cost);
-    const status=a.ready?`<div class="w-status ready">✅ You can afford this now!</div><div class="w-sub">User 1 can see it on their side 🛒</div>`
+    const status=a.ready?`<div class="w-status ready">✅ You can afford this now!</div><div class="w-sub">Mum can see it on her side 🛒</div>`
       :a.date?`<div class="w-status">Need ${money(a.need)} more</div><div class="w-sub">≈ affordable around ${fmtDate(a.date)} (estimate)</div>`
       :`<div class="w-status">Need ${money(a.need)} more</div><div class="w-sub">${a.note}</div>`;
     return `<div class="wish ${a.ready?'ready':''}">
@@ -415,9 +415,9 @@ function renderWishTom(){
 
 function renderWishMum(){
   const list=document.getElementById('wishMum');
-  if(!WISH.length){ list.innerHTML='<div class="empty"><div class="e">🎁</div><b>No requests yet</b><span>User 2 hasn’t added anything to their wishlist.</span></div>'; return; }
+  if(!WISH.length){ list.innerHTML='<div class="empty"><div class="e">🎁</div><b>No requests yet</b><span>Thomas hasn’t added anything to their wishlist.</span></div>'; return; }
   const items=WISH.map(w=>({w,a:affordability(+w.cost)})).sort((x,y)=>(y.a.ready?1:0)-(x.a.ready?1:0));
-  items.forEach(({w,a})=>{ if(a.ready){ if(booted&&!notified.has(w.id)) toast(`User 2 can afford ${w.name}! 🎉`); notified.add(w.id);} });
+  items.forEach(({w,a})=>{ if(a.ready){ if(booted&&!notified.has(w.id)) toast(`Thomas can afford ${w.name}! 🎉`); notified.add(w.id);} });
   list.innerHTML=items.map(({w,a})=>{
     const status=a.ready?`<div class="w-status ready">✅ Affordable now — ${money(w.cost)}</div>`
       :a.date?`<div class="w-status">${money(a.need)} short · ≈ ${fmtDate(a.date)}</div>`
@@ -452,7 +452,7 @@ async function delWish(id){
 async function buyWish(id){
   const w=WISH.find(x=>x.id===id); if(!w) return;
   if(!confirm(`Mark “${w.name}” as bought? This logs a ${money(w.cost)} expense.`)) return;
-  await sb.from('transactions').insert({type:'expense',amount:w.cost,category:'Shop',label:w.name,person:'User 1',occurred_on:new Date().toISOString().slice(0,10)});
+  await sb.from('transactions').insert({type:'expense',amount:w.cost,category:'Shop',label:w.name,person:'Mum',occurred_on:new Date().toISOString().slice(0,10)});
   await sb.from('wishlist').update({status:'bought'}).eq('id',id);
   WISH=WISH.filter(x=>x.id!==id); toast(`Got ${w.name} — logged ${money(w.cost)} 🛍️`);
 }
@@ -506,7 +506,7 @@ document.getElementById('wSave').onclick=async()=>{
   const cost=parseFloat(document.getElementById('wCost').value); const name=document.getElementById('wName').value.trim();
   if(!(cost>0)||!name)return;
   let link=document.getElementById('wLink').value.trim(); if(link&&!/^https?:\/\//i.test(link))link='https://'+link;
-  const row={name,cost,link:link||null,requested_by:'User 2',status:'saving'};
+  const row={name,cost,link:link||null,requested_by:'Thomas',status:'saving'};
   wsheet.classList.remove('open');
   const {data,error}=await sb.from('wishlist').insert(row).select().single();
   if(error){toast('Save failed');return;}
