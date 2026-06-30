@@ -1,5 +1,5 @@
 /* MoneySync service worker — makes it installable + works offline-ish */
-const CACHE = 'moneysync-v12';
+const CACHE = 'moneysync-v13';
 const SHELL = ['./', 'index.html', 'manifest.json', 'assets/mum.jpg', 'assets/icon-192.png', 'assets/icon-512.png'];
 
 self.addEventListener('install', e => {
